@@ -21,7 +21,7 @@ An implementation of the **Model Context Protocol (MCP)** that allows Claude Des
 * **Claude Desktop (Installed).**
 
 ## 🚀 Quick Start
-1. **Clone the repo:** `git clone https://github.com/your-username/nessus-mcp-server.git`
+1. **Clone the repo:** `git clone https://github.com/samtesura/nessus-mcp-server.git`
 2. **Setup Config:** Rename `config.json.example` to `config.json` and add your Nessus API keys.
 3. **Build:** Run `.\scripts/build-docker.ps1`
 4. **Integrate:** Add the server configuration to your `claude_desktop_config.json`.
