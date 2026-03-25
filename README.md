@@ -15,7 +15,7 @@ An implementation of the **Model Context Protocol (MCP)** that allows Claude Des
 * **API:** Tenable Nessus JSON API
 * **Containerization:** Docker
 
-##📋 Prerequisites
+## 📋 Prerequisites
 * **Docker Desktop (Running).**
 * **Nessus Essentials (Installed on host).**
 * **Claude Desktop (Installed).**
