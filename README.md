@@ -47,5 +47,5 @@ This project implements a dedicated MCP Server that acts as an intelligent inter
 
 * Error-Resilient Design: Optimized PowerShell build scripts and a simplified Dockerfile to ensure seamless setup on Windows environments.
 
-# Impact
+### Impact
 By abstracting the Nessus API into natural language tools, security analysts can perform comprehensive network audits ("Scan 192.168.1.0/24 and summarize the findings") without leaving their primary research environment.
