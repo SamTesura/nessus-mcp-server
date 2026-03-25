@@ -1,0 +1,21 @@
+# Configuration and Secrets
+config.json
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+ENV/
+
+# Logs
+*.log
+mcp*.log
+
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore

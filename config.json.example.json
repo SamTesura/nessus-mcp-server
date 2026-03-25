@@ -1,0 +1,21 @@
+{
+  "nessus_url": "https://host.docker.internal:8834",
+  "access_key": "YOUR_KEY_HERE",
+  "secret_key": "YOUR_KEY_HERE",
+  "verify_ssl": false,
+  "scan_defaults": {
+    "policy_id": null,
+    "folder_id": null,
+    "scanner_id": null
+  },
+  "export_defaults": {
+    "format": "pdf",
+    "chapters": "vuln_hosts_summary"
+  },
+  "workflow_defaults": {
+    "auto_launch": true,
+    "auto_export": true,
+    "cleanup_on_complete": false,
+    "poll_interval": 15
+  }
+}
