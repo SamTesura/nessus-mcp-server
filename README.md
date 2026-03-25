@@ -35,10 +35,10 @@ An implementation of the **Model Context Protocol (MCP)** that allows Claude Des
 
 ## Technical summary 
 
-# The Challenge
+### The Challenge
 Nessus is a powerful vulnerability scanner, but managing it often requires navigating a complex web UI or writing custom scripts for the JSON API. Integrating these capabilities directly into an AI’s context window requires a bridge that handles authentication, networking, and structured data exchange.
 
-# The Solution
+### The Solution
 This project implements a dedicated MCP Server that acts as an intelligent intermediary between Claude Desktop and a local Nessus Essentials instance. It features:
 
 * Robust Containerization: A Docker-based deployment that uses host.docker.internal to securely bridge the gap between the isolated container and the host-running Nessus service.
