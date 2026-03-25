@@ -190,8 +190,8 @@ cd "C:\Program Files\nessus_mcp_server"
 @'
 {
   "nessus_url": "https://host.docker.internal:8834",
-  "access_key": "5e3c418bd05999a7b2c42c8ccaf94b1a6d76f23a5f798a796edf7e14ce562d2d",
-  "secret_key": "24c7cd114948744f4f72d6d68c95b25ecfd338092b3efe4f56317705b2b1d802",
+  "access_key": "YOUR_KEY_HERE",
+  "secret_key": "YOUR_KEY_HERE",
   "verify_ssl": false,
   "scan_defaults": {
     "policy_id": null,
