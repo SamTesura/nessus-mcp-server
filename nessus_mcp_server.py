@@ -257,7 +257,8 @@ class NessusMCPServer:
         # Test connection
         try:
             props = self.nessus.get_server_properties()
-            logger.info(f"Connected to Nessus {props.get('nessus_version')}")
+            version = props.get('nessus_version') or 'unknown'
+            logger.info(f"Connected to Nessus (version: {version})")
         except Exception as e:
             logger.error(f"Failed to connect to Nessus: {e}")
             raise
@@ -1123,7 +1124,8 @@ async def main():
     
     # Run stdio server
     from mcp.server.stdio import stdio_server
-    
+
+    logger.info("MCP server ready on stdio, waiting for client (e.g. Claude Desktop) to send requests...")
     async with stdio_server() as (read_stream, write_stream):
         await server.server.run(
             read_stream,
