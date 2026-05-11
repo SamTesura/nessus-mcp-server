@@ -1,5 +1,5 @@
 {
-  "nessus_url": "https://host.docker.internal:8834",
+  "url": "https://host.docker.internal:8834",
   "access_key": "YOUR_KEY_HERE",
   "secret_key": "YOUR_KEY_HERE",
   "verify_ssl": false,

@@ -73,8 +73,8 @@ Write-Host '    }' -ForegroundColor Gray
 Write-Host '  }' -ForegroundColor Gray
 Write-Host "}" -ForegroundColor Gray
 Write-Host ""
-Write-Host "3. Update your config.json file:" -ForegroundColor White
-Write-Host '   - Change "nessus_url" from "https://localhost:8834"' -ForegroundColor White
+Write-Host "3. Update your nessus_mcp_config.json file:" -ForegroundColor White
+Write-Host '   - Change "url" from "https://localhost:8834"' -ForegroundColor White
 Write-Host '     to "https://host.docker.internal:8834"' -ForegroundColor Yellow
 Write-Host ""
 Write-Host "4. Restart Claude Desktop" -ForegroundColor White
