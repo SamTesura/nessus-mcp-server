@@ -1,5 +1,6 @@
 # Configuration and Secrets
 config.json
+nessus_mcp_config.json
 .env
 
 # Python

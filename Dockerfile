@@ -26,7 +26,7 @@ RUN mkdir -p /app/reports
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
-ENV CONFIG_PATH=/app/config/config.json
+ENV NESSUS_CONFIG_PATH=/app/config/nessus_mcp_config.json
 
 # Run the MCP server
 CMD ["python", "nessus_mcp_server.py"]

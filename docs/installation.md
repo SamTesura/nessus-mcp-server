@@ -8,7 +8,7 @@ Before building, make sure ALL these files are in `C:\Program Files\nessus_mcp_s
 - [ ] `nessus_mcp_server.py` - Main MCP server implementation
 - [ ] `requirements.txt` - Python dependencies
 - [ ] `Dockerfile` - Docker container configuration
-- [ ] `config.json` - Your Nessus configuration with API keys
+- [ ] `nessus_mcp_config.json` - Your Nessus configuration with API keys
 
 ### ✓ Setup Files (OPTIONAL but helpful)
 - [ ] `setup_nessus_mcp.py` - Configuration wizard
@@ -36,7 +36,7 @@ Download these files from Claude and place them in the directory:
 1. **nessus_mcp_server.py** - The main server file
 2. **Dockerfile** - The simplified Docker configuration
 3. **requirements.txt** - Python dependencies
-4. **config.json** - Pre-configured with your API keys
+4. **nessus_mcp_config.json** - Pre-configured with your API keys (copy from `nessus_mcp_config.json.example`)
 
 Optional files:
 - **test_nessus_mcp.py** - For testing
@@ -55,7 +55,7 @@ Expected output should show at minimum:
 Dockerfile
 nessus_mcp_server.py
 requirements.txt
-config.json
+nessus_mcp_config.json
 ```
 
 ### Step 4: Build Docker Image
@@ -111,6 +111,8 @@ Add this configuration:
 
 **Important**: If you already have other MCP servers, add the "nessus" section inside the existing "mcpServers" object.
 
+> The Dockerfile bakes in `NESSUS_CONFIG_PATH=/app/config/nessus_mcp_config.json`. If you mount your config at a different path or filename, override it via `-e NESSUS_CONFIG_PATH=/your/path/your_file.json` in the args.
+
 ### Step 7: Restart Claude Desktop
 
 1. Quit Claude Desktop completely (File → Quit)
@@ -141,10 +143,10 @@ What scan policies are available?
 ### Minimal File Structure
 ```
 C:\Program Files\nessus_mcp_server\
-├── Dockerfile                  (Docker build instructions)
-├── nessus_mcp_server.py       (MCP server code)
-├── requirements.txt           (Python dependencies)
-└── config.json                (Your API keys and settings)
+├── Dockerfile                       (Docker build instructions)
+├── nessus_mcp_server.py             (MCP server code)
+├── requirements.txt                 (Python dependencies)
+└── nessus_mcp_config.json           (Your API keys and settings)
 ```
 
 ### Complete File Structure
@@ -153,10 +155,10 @@ C:\Program Files\nessus_mcp_server\
 ├── Dockerfile
 ├── nessus_mcp_server.py
 ├── requirements.txt
-├── config.json
-├── setup_nessus_mcp.py        (Setup wizard)
-├── test_nessus_mcp.py         (Test suite)
-└── build-docker.ps1           (Build script)
+├── nessus_mcp_config.json
+├── setup_nessus_mcp.py              (Setup wizard)
+├── test_nessus_mcp.py               (Test suite)
+└── build-docker.ps1                 (Build script)
 ```
 
 ---
@@ -169,8 +171,8 @@ C:\Program Files\nessus_mcp_server\
 ### Error: "nessus_mcp_server.py: not found"
 **Solution**: Make sure nessus_mcp_server.py is in the build directory
 
-### Error: "config.json: not found"
-**Solution**: Create config.json before building (it's needed for the container)
+### Error: "Configuration file not found. Please create nessus_mcp_config.json"
+**Solution**: Place `nessus_mcp_config.json` in the directory mounted to `/app/config` inside the container (default install: `C:\Program Files\nessus_mcp_server\`). The Python server reads `NESSUS_CONFIG_PATH` (set by the Dockerfile to `/app/config/nessus_mcp_config.json`) and falls back to `~/.config/nessus-mcp/config.json` or `./nessus_mcp_config.json`.
 
 ### Error: "COPY failed"
 **Solution**: Verify you're running `docker build` from the directory containing all files
@@ -189,7 +191,7 @@ cd "C:\Program Files\nessus_mcp_server"
 # Create config (if not downloaded)
 @'
 {
-  "nessus_url": "https://host.docker.internal:8834",
+  "url": "https://host.docker.internal:8834",
   "access_key": "YOUR_KEY_HERE",
   "secret_key": "YOUR_KEY_HERE",
   "verify_ssl": false,
@@ -209,7 +211,7 @@ cd "C:\Program Files\nessus_mcp_server"
     "poll_interval": 15
   }
 }
-'@ | Out-File "config.json" -Encoding utf8
+'@ | Out-File "nessus_mcp_config.json" -Encoding utf8
 
 # Build
 docker build -t nessus-mcp-server .
@@ -228,15 +230,18 @@ If Docker continues to cause issues, you can run the server directly:
 # Install dependencies
 pip install requests mcp
 
-# Update config.json to use localhost
-# Change "nessus_url" to "https://localhost:8834"
+# Update nessus_mcp_config.json to use localhost
+# Change "url" to "https://localhost:8834"
 
 # Add to Claude Desktop config:
 {
   "mcpServers": {
     "nessus": {
       "command": "python",
-      "args": ["C:/Program Files/nessus_mcp_server/nessus_mcp_server.py"]
+      "args": ["C:/Program Files/nessus_mcp_server/nessus_mcp_server.py"],
+      "env": {
+        "NESSUS_CONFIG_PATH": "C:/Program Files/nessus_mcp_server/nessus_mcp_config.json"
+      }
     }
   }
 }
@@ -249,8 +254,8 @@ pip install requests mcp
 Before contacting support, verify:
 
 - [ ] All 4 required files exist in the directory
-- [ ] config.json has correct API keys
-- [ ] config.json uses `https://host.docker.internal:8834`
+- [ ] `nessus_mcp_config.json` has correct API keys
+- [ ] `nessus_mcp_config.json` uses `"url": "https://host.docker.internal:8834"` (not `nessus_url`)
 - [ ] Docker Desktop is running
 - [ ] Nessus is running at https://localhost:8834
 - [ ] Docker build completes without errors
