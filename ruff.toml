@@ -1,0 +1,13 @@
+# Quality-gate lint config. Selects real-bug rules (pyflakes + syntax), not
+# stylistic opinions, so the gate flags genuine defects without demanding a
+# reformat of the whole tree.
+[lint]
+select = ["F", "E9"]
+
+[lint.per-file-ignores]
+# Pre-existing violations in source that predates the gate. The gate ratchets:
+# these are grandfathered, but NEW files (and new code the linter can see) are
+# still enforced. Remove an entry once its file is cleaned up.
+"nessus_mcp_server.py" = ["F401", "F841"]
+# Legacy interactive connectivity script (needs a live Nessus); not linted here.
+"tests/test_nessus_mcp.py" = ["F"]
