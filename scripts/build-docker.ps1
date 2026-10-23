@@ -25,7 +25,7 @@ Write-Host ""
 
 # Build the Docker image
 Write-Host "Building Docker image..." -ForegroundColor Yellow
-docker build -t nessus-mcp-server .
+docker build --pull -t nessus-mcp-server .
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Docker build failed!" -ForegroundColor Red

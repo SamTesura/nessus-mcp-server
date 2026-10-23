@@ -98,7 +98,7 @@ cd "C:\Program Files\nessus_mcp_server"
 ls Dockerfile
 
 # 4. Rebuild with no cache
-docker build --no-cache -t nessus-mcp-server .
+docker build --pull --no-cache -t nessus-mcp-server .
 ```
 
 ## Testing Commands
