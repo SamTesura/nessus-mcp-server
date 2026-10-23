@@ -5,6 +5,7 @@ Run basic connectivity and functionality tests
 """
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -42,7 +43,11 @@ def session_for(config):
     session = requests.Session()
     fingerprint = config.get('tls_fingerprint')
     if fingerprint:
-        session.mount('https://', PinnedCertAdapter(fingerprint.replace(':', '').lower()))
+        # The same check as the server's normalize_fingerprint(): SHA-256 only.
+        fingerprint = fingerprint.replace(':', '').replace(' ', '').lower()
+        if not re.fullmatch(r'[0-9a-f]{64}', fingerprint):
+            sys.exit("tls_fingerprint must be the SHA-256 fingerprint of the Nessus certificate (64 hex digits)")
+        session.mount('https://', PinnedCertAdapter(fingerprint))
     else:
         session.verify = config.get('verify_ssl', True)
     return session

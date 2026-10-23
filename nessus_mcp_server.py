@@ -12,6 +12,7 @@ import time
 import os
 from typing import Any, Dict, List, Optional, Union
 from pathlib import Path
+from urllib.parse import urlparse
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -56,8 +57,8 @@ class PinnedCertAdapter(HTTPAdapter):
         return super().proxy_manager_for(*args, **kwargs)
 
     def send(self, request, **kwargs):
-        # Otherwise requests swaps in REQUESTS_CA_BUNDLE, if set, and the CA check
-        # rejects the self-signed certificate before the pin is compared.
+        # Otherwise session.verify (True, or REQUESTS_CA_BUNDLE from the environment)
+        # makes the CA check reject the certificate before the pin is compared.
         kwargs['verify'] = False
         return super().send(request, **kwargs)
 
@@ -68,6 +69,8 @@ class NessusClient:
     def __init__(self, url: str, access_key: str, secret_key: str,
                  verify_ssl: Union[bool, str] = True, tls_fingerprint: Optional[str] = None):
         self.url = url.rstrip('/')
+        if urlparse(self.url).scheme != 'https':
+            raise ValueError(f"url must start with https:// (got {self.url!r}): the API keys go in every request")
         self.access_key = access_key
         self.secret_key = secret_key
         self.verify_ssl = verify_ssl
@@ -77,30 +80,42 @@ class NessusClient:
         }
         self.session = requests.Session()
         self.session.headers.update(self.headers)
+        # Passed with every request rather than set on the session: a session's verify
+        # loses to REQUESTS_CA_BUNDLE from the environment, a request's does not.
+        self._verify: Union[bool, str, None] = None
         if tls_fingerprint:
             self.session.mount('https://', PinnedCertAdapter(normalize_fingerprint(tls_fingerprint)))
         else:
             # True: public CAs. A path: that CA bundle. False: no check at all.
-            self.session.verify = verify_ssl
+            self._verify = verify_ssl
             if verify_ssl is False:
                 logger.warning(
                     "verify_ssl is false: the Nessus API keys are sent without checking the "
                     "server's certificate. Set tls_fingerprint instead (see docs/troubleshooting.md)."
                 )
     
+    def _send(self, method: str, url: str, **kwargs) -> requests.Response:
+        """Send one request to Nessus, never following a redirect.
+
+        The API keys travel in a header that requests keeps across redirects, so a
+        redirect would hand them to wherever it points.
+        """
+        if self._verify is not None:
+            kwargs['verify'] = self._verify
+        response = self.session.request(method, url, allow_redirects=False, **kwargs)
+        if response.is_redirect:
+            raise requests.exceptions.RequestException(
+                f"Nessus answered {response.status_code} with a redirect to "
+                f"{response.headers.get('Location')!r}; not followed, so the API keys stay with {self.url}"
+            )
+        return response
+
     def _request(self, method: str, endpoint: str, data: Optional[Dict] = None) -> Dict:
         """Make API request"""
         url = f"{self.url}{endpoint}"
         
         try:
-            if method == 'GET':
-                response = self.session.get(url)
-            elif method == 'POST':
-                response = self.session.post(url, json=data)
-            elif method == 'PUT':
-                response = self.session.put(url, json=data)
-            elif method == 'DELETE':
-                response = self.session.delete(url)
+            response = self._send(method, url, json=data if method in ('POST', 'PUT') else None)
             
             response.raise_for_status()
             return response.json() if response.text else {}
@@ -215,7 +230,7 @@ class NessusClient:
     
     def download_export(self, scan_id: int, file_id: int) -> bytes:
         url = f"{self.url}/scans/{scan_id}/export/{file_id}/download"
-        response = self.session.get(url)
+        response = self._send('GET', url)
         response.raise_for_status()
         return response.content
     
