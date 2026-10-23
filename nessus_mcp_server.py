@@ -7,27 +7,66 @@ Model Context Protocol server for vulnerability scanning with Nessus
 import json
 import asyncio
 import logging
+import re
 import time
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from pathlib import Path
 
 import requests
-import urllib3
+from requests.adapters import HTTPAdapter
 from mcp.server import Server
 from mcp.types import Tool, TextContent, ImageContent, EmbeddedResource
-
-# Disable SSL warnings for self-signed certificates
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("nessus-mcp")
 
+
+def normalize_fingerprint(value: str) -> str:
+    """Return a SHA-256 certificate fingerprint as 64 lowercase hex digits."""
+    fingerprint = value.replace(':', '').replace(' ', '').lower()
+    if not re.fullmatch(r'[0-9a-f]{64}', fingerprint):
+        raise ValueError(
+            "tls_fingerprint must be the SHA-256 fingerprint of the Nessus server "
+            "certificate: 64 hex digits, colons optional (see docs/troubleshooting.md)"
+        )
+    return fingerprint
+
+
+class PinnedCertAdapter(HTTPAdapter):
+    """Trust exactly one server certificate, identified by its SHA-256 fingerprint.
+
+    Nessus serves a self-signed certificate issued to the scanner host, so it neither
+    chains to a public CA nor matches host.docker.internal. Pinning its fingerprint
+    authenticates that one server without either check: urllib3 refuses any other
+    certificate, so the CA and hostname checks it replaces are switched off here.
+    """
+
+    def __init__(self, fingerprint: str, **kwargs):
+        self._fingerprint = fingerprint
+        super().__init__(**kwargs)
+
+    def init_poolmanager(self, *args, **kwargs):
+        kwargs['assert_fingerprint'] = self._fingerprint
+        super().init_poolmanager(*args, **kwargs)
+
+    def proxy_manager_for(self, *args, **kwargs):
+        kwargs['assert_fingerprint'] = self._fingerprint
+        return super().proxy_manager_for(*args, **kwargs)
+
+    def send(self, request, **kwargs):
+        # Otherwise requests swaps in REQUESTS_CA_BUNDLE, if set, and the CA check
+        # rejects the self-signed certificate before the pin is compared.
+        kwargs['verify'] = False
+        return super().send(request, **kwargs)
+
+
 class NessusClient:
     """Client for interacting with Nessus API"""
-    
-    def __init__(self, url: str, access_key: str, secret_key: str, verify_ssl: bool = False):
+
+    def __init__(self, url: str, access_key: str, secret_key: str,
+                 verify_ssl: Union[bool, str] = True, tls_fingerprint: Optional[str] = None):
         self.url = url.rstrip('/')
         self.access_key = access_key
         self.secret_key = secret_key
@@ -38,7 +77,16 @@ class NessusClient:
         }
         self.session = requests.Session()
         self.session.headers.update(self.headers)
-        self.session.verify = verify_ssl
+        if tls_fingerprint:
+            self.session.mount('https://', PinnedCertAdapter(normalize_fingerprint(tls_fingerprint)))
+        else:
+            # True: public CAs. A path: that CA bundle. False: no check at all.
+            self.session.verify = verify_ssl
+            if verify_ssl is False:
+                logger.warning(
+                    "verify_ssl is false: the Nessus API keys are sent without checking the "
+                    "server's certificate. Set tls_fingerprint instead (see docs/troubleshooting.md)."
+                )
     
     def _request(self, method: str, endpoint: str, data: Optional[Dict] = None) -> Dict:
         """Make API request"""
@@ -251,7 +299,8 @@ class NessusMCPServer:
             url=self.config.get('url', 'https://localhost:8834'),
             access_key=self.config['access_key'],
             secret_key=self.config['secret_key'],
-            verify_ssl=self.config.get('verify_ssl', False)
+            verify_ssl=self.config.get('verify_ssl', True),
+            tls_fingerprint=self.config.get('tls_fingerprint')
         )
         
         # Test connection
