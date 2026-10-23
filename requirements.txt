@@ -1,2 +1,5 @@
 requests>=2.31.0
 mcp>=0.9.0
+# requests trusts certifi's CA bundle; 2026.10.19 fixes GHSA-6q48-6c7w-9gw2
+# (drops the root behind the compromised eMudhra/emSign CAs)
+certifi>=2026.10.19
