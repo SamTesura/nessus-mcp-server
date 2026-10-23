@@ -15,8 +15,9 @@ RUN apt-get update && \
 # trusts the two roots behind the compromised eMudhra (emSign) CAs, even when
 # the apt layer above comes from cache or Debian's fix (ca-certificates
 # 20250419+deb13u1) has not reached this base yet. '!' deselects a listed
-# root; once the fixed package has dropped one, its line is gone and sed
-# leaves it be. The check fails the build if either root is still trusted.
+# root; once the fixed package has deselected or dropped one, sed finds no
+# plain line to change. The check fails the build if either root is still
+# trusted.
 RUN sed -i -e 's|^mozilla/emSign_ECC_Root_CA_-_G3\.crt$|!&|' \
            -e 's|^mozilla/Comodo_AAA_Services_root\.crt$|!&|' \
            /etc/ca-certificates.conf && \
