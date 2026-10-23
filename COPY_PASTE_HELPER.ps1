@@ -31,7 +31,7 @@
 
 # 2. Build Docker image (fixed build script)
 cd "C:\Program Files\nessus_mcp_server"
-docker build -t nessus-mcp-server .
+docker build --pull -t nessus-mcp-server .
 
 # 3. Test Docker connectivity
 docker run --rm -it --add-host=host.docker.internal:host-gateway -v "C:/Program Files/nessus_mcp_server:/app/config" nessus-mcp-server sh -c "curl -k https://host.docker.internal:8834"
