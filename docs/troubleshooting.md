@@ -21,14 +21,26 @@
 
 ### ❌ Problem: "SSL Certificate Verify Failed"
 
-**Solution**: Set `verify_ssl: false` in your config.json
+Nessus serves a self-signed certificate issued to your computer's name, so it neither chains to a public CA nor matches `host.docker.internal`, and normal verification fails.
+
+**Solution**: Pin that certificate. Print its SHA-256 fingerprint from the container:
+
+```powershell
+docker run --rm --add-host=host.docker.internal:host-gateway nessus-mcp-server sh -c "openssl s_client -connect host.docker.internal:8834 </dev/null 2>/dev/null | openssl x509 -noout -fingerprint -sha256"
+```
+
+Copy the part after `=` into your config:
 
 ```json
 {
-  "nessus_url": "https://host.docker.internal:8834",
-  "verify_ssl": false
+  "url": "https://host.docker.internal:8834",
+  "tls_fingerprint": "AB:CD:...:EF"
 }
 ```
+
+The server then trusts exactly this certificate and nothing else. Compare the fingerprint once with the one your browser shows for https://localhost:8834. If Nessus later regenerates its certificate, the connection fails until you repeat this.
+
+Do not set `verify_ssl` to `false` instead: the API keys would then go, unverified, to whatever answers on that address. (`verify_ssl` also accepts the path of a CA bundle, for a Nessus certificate issued by your own CA.)
 
 ### ❌ Problem: "Config file not found"
 
@@ -116,7 +128,7 @@ docker run --rm -i `
 docker run --rm -it `
   --add-host=host.docker.internal:host-gateway `
   nessus-mcp-server `
-  sh -c "curl -k https://host.docker.internal:8834"
+  sh -c "openssl s_client -connect host.docker.internal:8834 </dev/null 2>/dev/null | openssl x509 -noout -fingerprint -sha256"
 ```
 
 ### Inspect container logs:
@@ -163,8 +175,8 @@ docker rmi nessus-mcp-server
 cd "C:\Program Files\nessus_mcp_server"
 .\build-docker.ps1
 
-# 3. Test connection
-docker run --rm -it --add-host=host.docker.internal:host-gateway nessus-mcp-server sh -c "curl -k https://host.docker.internal:8834"
+# 3. Test connection (prints the certificate fingerprint)
+docker run --rm --add-host=host.docker.internal:host-gateway nessus-mcp-server sh -c "openssl s_client -connect host.docker.internal:8834 </dev/null 2>/dev/null | openssl x509 -noout -fingerprint -sha256"
 ```
 
 ### Verify Claude Desktop config:
@@ -178,8 +190,8 @@ python -m json.tool "$env:APPDATA\Claude\claude_desktop_config.json"
 
 ### Check Nessus API keys:
 ```powershell
-# Test with curl
-curl -k -H "X-ApiKeys: accessKey=YOUR_ACCESS_KEY; secretKey=YOUR_SECRET_KEY" https://localhost:8834/scans
+# Uses the server's own client, so the certificate is checked exactly as in production
+docker run --rm --add-host=host.docker.internal:host-gateway -v "C:/Program Files/nessus_mcp_server:/app/config" nessus-mcp-server python -c "import json; from nessus_mcp_server import NessusClient as C; c=json.load(open('/app/config/nessus_mcp_config.json')); n=C(c['url'], c['access_key'], c['secret_key'], c.get('verify_ssl', True), c.get('tls_fingerprint')); print(len(n.list_scans()), 'scans visible: keys and certificate OK')"
 ```
 
 ## Still Having Issues?

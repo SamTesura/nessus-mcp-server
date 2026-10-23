@@ -80,11 +80,11 @@ Successfully tagged nessus-mcp-server:latest
 ### Step 5: Test Docker Image
 
 ```powershell
-# Test basic connectivity
-docker run --rm -it --add-host=host.docker.internal:host-gateway -v "C:/Program Files/nessus_mcp_server:/app/config" nessus-mcp-server sh -c "curl -k https://host.docker.internal:8834"
+# Test connectivity and print the Nessus certificate fingerprint
+docker run --rm --add-host=host.docker.internal:host-gateway nessus-mcp-server sh -c "openssl s_client -connect host.docker.internal:8834 </dev/null 2>/dev/null | openssl x509 -noout -fingerprint -sha256"
 ```
 
-Expected: HTML response from Nessus web interface
+Expected: one line such as `sha256 Fingerprint=AB:CD:...:EF`. That shows the container reaches Nessus. Copy the part after `=` into `tls_fingerprint` in your config: the server then trusts exactly this certificate. To double-check it, open https://localhost:8834 in your browser and compare the SHA-256 fingerprint in its certificate viewer.
 
 ### Step 6: Configure Claude Desktop
 
@@ -196,7 +196,7 @@ cd "C:\Program Files\nessus_mcp_server"
   "url": "https://host.docker.internal:8834",
   "access_key": "YOUR_KEY_HERE",
   "secret_key": "YOUR_KEY_HERE",
-  "verify_ssl": false,
+  "tls_fingerprint": "PASTE_THE_NESSUS_CERTIFICATE_SHA256_FINGERPRINT",
   "scan_defaults": {
     "policy_id": null,
     "folder_id": null,
@@ -218,8 +218,8 @@ cd "C:\Program Files\nessus_mcp_server"
 # Build
 docker build --pull -t nessus-mcp-server .
 
-# Test
-docker run --rm -it --add-host=host.docker.internal:host-gateway -v "C:/Program Files/nessus_mcp_server:/app/config" nessus-mcp-server sh -c "curl -k https://host.docker.internal:8834"
+# Test connectivity and print the fingerprint to paste into tls_fingerprint
+docker run --rm --add-host=host.docker.internal:host-gateway nessus-mcp-server sh -c "openssl s_client -connect host.docker.internal:8834 </dev/null 2>/dev/null | openssl x509 -noout -fingerprint -sha256"
 ```
 
 ---

@@ -10,7 +10,7 @@
   "nessus_url": "https://host.docker.internal:8834",
   "access_key": "YOUR KEY",
   "secret_key": "YOUR KEY",
-  "verify_ssl": false,
+  "tls_fingerprint": "PASTE_THE_NESSUS_CERTIFICATE_SHA256_FINGERPRINT",
   "scan_defaults": {
     "policy_id": null,
     "folder_id": null,
@@ -33,11 +33,12 @@
 cd "C:\Program Files\nessus_mcp_server"
 docker build --pull -t nessus-mcp-server .
 
-# 3. Test Docker connectivity
-docker run --rm -it --add-host=host.docker.internal:host-gateway -v "C:/Program Files/nessus_mcp_server:/app/config" nessus-mcp-server sh -c "curl -k https://host.docker.internal:8834"
+# 3. Test Docker connectivity and get the Nessus certificate fingerprint
+docker run --rm --add-host=host.docker.internal:host-gateway nessus-mcp-server sh -c "openssl s_client -connect host.docker.internal:8834 </dev/null 2>/dev/null | openssl x509 -noout -fingerprint -sha256"
 
 # ============================================================
-# Expected output: HTML from Nessus login page
+# Expected output: sha256 Fingerprint=AB:CD:...:EF
+# Paste the part after "=" into "tls_fingerprint" in config.json.
 # ============================================================
 
 # 4. Add to Claude Desktop config

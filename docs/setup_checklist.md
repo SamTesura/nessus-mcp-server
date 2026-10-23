@@ -32,10 +32,10 @@ Expected output:
 
 ## Test Docker Connection ✓
 ```powershell
-docker run --rm -it --add-host=host.docker.internal:host-gateway nessus-mcp-server sh -c "curl -k https://host.docker.internal:8834"
+docker run --rm --add-host=host.docker.internal:host-gateway nessus-mcp-server sh -c "openssl s_client -connect host.docker.internal:8834 </dev/null 2>/dev/null | openssl x509 -noout -fingerprint -sha256"
 ```
 
-Expected: HTML response from Nessus web interface
+Expected: one line such as `sha256 Fingerprint=AB:CD:...:EF`. That shows the container reaches Nessus. Copy the part after `=` into `tls_fingerprint` in your config: the server then trusts exactly this certificate. To double-check it, open https://localhost:8834 in your browser and compare the SHA-256 fingerprint in its certificate viewer.
 
 ## Claude Desktop Configuration ✓
 
@@ -99,7 +99,7 @@ If tools not appearing:
 
 If connection errors:
 - [ ] Verify URL in config.json: `https://host.docker.internal:8834`
-- [ ] Check `verify_ssl: false` in config
+- [ ] Check `tls_fingerprint` in config matches the fingerprint the Docker connection test prints
 - [ ] Test host connectivity: `curl https://localhost:8834`
 - [ ] Verify Docker host networking: `--add-host=host.docker.internal:host-gateway`
 
@@ -115,7 +115,7 @@ If connection errors:
 **Fix**: Check volume mount path uses forward slashes: `C:/Program Files/...`
 
 ### ❌ "SSL certificate error"
-**Fix**: Set `"verify_ssl": false` in config.json
+**Fix**: Set `"tls_fingerprint"` in config.json to the fingerprint the Docker connection test prints (see [troubleshooting](troubleshooting.md#-problem-ssl-certificate-verify-failed)). Do not turn `verify_ssl` off: the API keys would then go to any server that answers.
 
 ### ❌ Tools not appearing in Claude
 **Fix**: 
