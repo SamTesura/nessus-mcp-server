@@ -2,7 +2,7 @@
   "url": "https://host.docker.internal:8834",
   "access_key": "YOUR_KEY_HERE",
   "secret_key": "YOUR_KEY_HERE",
-  "verify_ssl": false,
+  "tls_fingerprint": "PASTE_THE_NESSUS_CERTIFICATE_SHA256_FINGERPRINT",
   "scan_defaults": {
     "policy_id": null,
     "folder_id": null,

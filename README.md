@@ -22,7 +22,7 @@ An implementation of the **Model Context Protocol (MCP)** that allows Claude Des
 
 ## 🚀 Quick Start
 1. **Clone the repo:** `git clone https://github.com/samtesura/nessus-mcp-server.git`
-2. **Setup Config:** Copy `nessus_mcp_config.json.example` to `nessus_mcp_config.json` and add your Nessus API keys.
+2. **Setup Config:** Copy `nessus_mcp_config.json.example` to `nessus_mcp_config.json`, add your Nessus API keys, and set `tls_fingerprint` to your Nessus certificate's SHA-256 fingerprint ([how](docs/troubleshooting.md#-problem-ssl-certificate-verify-failed)). The server refuses any other certificate, so the keys only ever go to your Nessus.
 3. **Build:** Run `.\scripts/build-docker.ps1`
 4. **Integrate:** Add the server configuration to your `claude_desktop_config.json`.
 

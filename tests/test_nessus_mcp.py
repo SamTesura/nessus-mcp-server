@@ -5,17 +5,52 @@ Run basic connectivity and functionality tests
 """
 
 import json
+import re
 import sys
 from pathlib import Path
 
 try:
     import requests
-    from requests.packages.urllib3.exceptions import InsecureRequestWarning
-    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+    from requests.adapters import HTTPAdapter
 except ImportError:
     print("Error: requests library not installed")
     print("Install with: pip install requests")
     sys.exit(1)
+
+
+class PinnedCertAdapter(HTTPAdapter):
+    """Trust only the certificate whose SHA-256 fingerprint is pinned (as the server does)."""
+
+    def __init__(self, fingerprint, **kwargs):
+        self._fingerprint = fingerprint
+        super().__init__(**kwargs)
+
+    def init_poolmanager(self, *args, **kwargs):
+        kwargs['assert_fingerprint'] = self._fingerprint
+        super().init_poolmanager(*args, **kwargs)
+
+    def proxy_manager_for(self, *args, **kwargs):
+        kwargs['assert_fingerprint'] = self._fingerprint
+        return super().proxy_manager_for(*args, **kwargs)
+
+    def send(self, request, **kwargs):
+        kwargs['verify'] = False  # the pin replaces the CA and hostname checks
+        return super().send(request, **kwargs)
+
+
+def session_for(config):
+    """A requests session that checks the Nessus certificate the way the server does."""
+    session = requests.Session()
+    fingerprint = config.get('tls_fingerprint')
+    if fingerprint:
+        # The same check as the server's normalize_fingerprint(): SHA-256 only.
+        fingerprint = fingerprint.replace(':', '').replace(' ', '').lower()
+        if not re.fullmatch(r'[0-9a-f]{64}', fingerprint):
+            sys.exit("tls_fingerprint must be the SHA-256 fingerprint of the Nessus certificate (64 hex digits)")
+        session.mount('https://', PinnedCertAdapter(fingerprint))
+    else:
+        session.verify = config.get('verify_ssl', True)
+    return session
 
 
 def load_config():
@@ -49,10 +84,9 @@ def test_connection(config):
             'X-ApiKeys': f"accessKey={config['access_key']}; secretKey={config['secret_key']}"
         }
         
-        response = requests.get(
+        response = session_for(config).get(
             f"{config['nessus_url']}/server/properties",
             headers=headers,
-            verify=config.get('verify_ssl', False),
             timeout=10
         )
         
@@ -84,10 +118,9 @@ def test_list_scans(config):
             'X-ApiKeys': f"accessKey={config['access_key']}; secretKey={config['secret_key']}"
         }
         
-        response = requests.get(
+        response = session_for(config).get(
             f"{config['nessus_url']}/scans",
             headers=headers,
-            verify=config.get('verify_ssl', False),
             timeout=10
         )
         
@@ -123,10 +156,9 @@ def test_list_policies(config):
             'X-ApiKeys': f"accessKey={config['access_key']}; secretKey={config['secret_key']}"
         }
         
-        response = requests.get(
+        response = session_for(config).get(
             f"{config['nessus_url']}/policies",
             headers=headers,
-            verify=config.get('verify_ssl', False),
             timeout=10
         )
         
@@ -160,10 +192,9 @@ def test_list_scanners(config):
             'X-ApiKeys': f"accessKey={config['access_key']}; secretKey={config['secret_key']}"
         }
         
-        response = requests.get(
+        response = session_for(config).get(
             f"{config['nessus_url']}/scanners",
             headers=headers,
-            verify=config.get('verify_ssl', False),
             timeout=10
         )
         
@@ -193,7 +224,8 @@ def main():
     # Load configuration
     config = load_config()
     print(f"\nTesting Nessus at: {config['nessus_url']}")
-    print(f"SSL Verification: {config.get('verify_ssl', False)}")
+    tls = 'pinned fingerprint' if config.get('tls_fingerprint') else config.get('verify_ssl', True)
+    print(f"SSL Verification: {tls}")
     
     # Run tests
     results = {
