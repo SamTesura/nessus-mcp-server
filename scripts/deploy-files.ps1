@@ -126,7 +126,7 @@ if ($allFilesPresent) {
     Write-Host "Next steps:" -ForegroundColor Yellow
     Write-Host "1. Build Docker image:" -ForegroundColor White
     Write-Host "   cd '$destDir'" -ForegroundColor Gray
-    Write-Host "   docker build -t nessus-mcp-server ." -ForegroundColor Gray
+    Write-Host "   docker build --pull -t nessus-mcp-server ." -ForegroundColor Gray
     Write-Host ""
     Write-Host "2. Configure Claude Desktop" -ForegroundColor White
     Write-Host "   See COMPLETE_INSTALLATION_GUIDE.md for details" -ForegroundColor Gray
