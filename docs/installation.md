@@ -65,8 +65,10 @@ nessus_mcp_config.json
 cd "C:\Program Files\nessus_mcp_server"
 
 # Build the image
-docker build -t nessus-mcp-server .
+docker build --pull -t nessus-mcp-server .
 ```
+
+`--pull` fetches the current `python:3.11-slim`, so the image gets the base's latest CA certificates. Rebuild this way after any CA-trust fix, such as the October 2026 eMudhra compromise; an image built earlier keeps the old trust store.
 
 Expected output:
 ```
@@ -214,7 +216,7 @@ cd "C:\Program Files\nessus_mcp_server"
 '@ | Out-File "nessus_mcp_config.json" -Encoding utf8
 
 # Build
-docker build -t nessus-mcp-server .
+docker build --pull -t nessus-mcp-server .
 
 # Test
 docker run --rm -it --add-host=host.docker.internal:host-gateway -v "C:/Program Files/nessus_mcp_server:/app/config" nessus-mcp-server sh -c "curl -k https://host.docker.internal:8834"
