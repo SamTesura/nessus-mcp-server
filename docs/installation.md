@@ -261,7 +261,7 @@ Before contacting support, verify:
 - [ ] Docker Desktop is running
 - [ ] Nessus is running at https://localhost:8834
 - [ ] Docker build completes without errors
-- [ ] Test curl returns HTML (not connection error)
+- [ ] The Docker connection test prints a `sha256 Fingerprint=` line, and `tls_fingerprint` in your config matches it
 - [ ] Claude Desktop config has correct JSON syntax
 - [ ] Claude Desktop was fully restarted (quit and reopen)
 
@@ -271,7 +271,7 @@ Before contacting support, verify:
 
 You'll know it's working when:
 - ✅ `docker build` completes successfully
-- ✅ Test curl returns Nessus HTML
+- ✅ The Docker connection test prints the Nessus certificate fingerprint
 - ✅ Claude recognizes Nessus commands
 - ✅ Claude can list scans and policies
 - ✅ No errors in `%APPDATA%\Claude\logs\mcp*.log`

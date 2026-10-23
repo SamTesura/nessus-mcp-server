@@ -40,7 +40,7 @@ Copy the part after `=` into your config:
 
 The server then trusts exactly this certificate and nothing else. Compare the fingerprint once with the one your browser shows for https://localhost:8834. If Nessus later regenerates its certificate, the connection fails until you repeat this.
 
-Do not set `verify_ssl` to `false` instead: the API keys would then go, unverified, to whatever answers on that address. (`verify_ssl` also accepts the path of a CA bundle, for a Nessus certificate issued by your own CA.)
+Do not set `verify_ssl` to `false` instead: the API keys would then go, unverified, to whatever answers on that address. (`verify_ssl` also accepts the path of a CA bundle, for a Nessus certificate issued by your own CA; that certificate must then also name `host.docker.internal`, or the hostname check fails.)
 
 ### ❌ Problem: "Config file not found"
 
@@ -191,7 +191,7 @@ python -m json.tool "$env:APPDATA\Claude\claude_desktop_config.json"
 ### Check Nessus API keys:
 ```powershell
 # Uses the server's own client, so the certificate is checked exactly as in production
-docker run --rm --add-host=host.docker.internal:host-gateway -v "C:/Program Files/nessus_mcp_server:/app/config" nessus-mcp-server python -c "import json; from nessus_mcp_server import NessusClient as C; c=json.load(open('/app/config/nessus_mcp_config.json')); n=C(c['url'], c['access_key'], c['secret_key'], c.get('verify_ssl', True), c.get('tls_fingerprint')); print(len(n.list_scans()), 'scans visible: keys and certificate OK')"
+docker run --rm --add-host=host.docker.internal:host-gateway -v "C:/Program Files/nessus_mcp_server:/app/config" nessus-mcp-server python -c "import json; from nessus_mcp_server import NessusClient as C; c=json.load(open('/app/config/nessus_mcp_config.json')); n=C(c['url'], c['access_key'], c['secret_key'], c.get('verify_ssl', True), c.get('tls_fingerprint')); print(len(n.list_scans() or []), 'scans visible: keys and certificate OK')"
 ```
 
 ## Still Having Issues?
